@@ -2,8 +2,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h> 
-#define NO_OF_SEGMENTS_PER_PROCESS 3
+#define NO_OF_SEGMENTS 3
 #define MAX_PROCESS_SIZE 12
+#define MIN_PROCESS_SIZE 3
+#define MIN_SEGMENT_SIZE 1
 
 // NB: assume all ints pertaining to sizes are in MB.
 
@@ -11,7 +13,7 @@
 typedef struct {
     int size;
     int base; // starting physical address 
-    bool growth_direction; // 1 indicates an upward direction, -1 indicates a downward direction, 0 for no growth
+    int growth_direction; // 1 indicates an upward direction, -1 indicates a downward direction, 0 for no growth
     bool protection_bit; // 1 indicates read-write, 0 indicates read-only
 } Segment;
 
@@ -19,26 +21,39 @@ typedef struct {
 typedef struct {
     int id;
     int size;
-    Segment* segments[NO_OF_SEGMENTS_PER_PROCESS];
+    Segment* segments[NO_OF_SEGMENTS];
 } Process;
+
+
+// FUNCTION DECLARATIONS
+int generate_random_number(int min, int max);
+Segment* create_segment(int max_segment_size, int growth_direction, int protection_bit);
+Process* create_process (int id);
+
 
 
 int main () {
 
     srand(time(NULL)); // for random number generation. must run just once.
+
+    Process* process = create_process(1);
+    printf("Process size: %d\n", process->size);
+    for (int i = 0; i<3; i++) {
+        printf("SEGMENT %d\n", i);
+        printf("Segment growth direction: %d\n", process->segments[i]->growth_direction);
+        printf("Segment protection direction: %d\n", process->segments[i]->protection_bit);
+        printf("Segment size: %d\n", process->segments[i]->size);
+    }
+    free(process);
+
     return 0;
 
 }
 
-// FUNCTION DECLARATIONS
-int generate_random_number(int min, int max);
-Segment* create_segment(int max_segment_size, int growth_direction, int protection_bit);
-
-
 // MAIN FUNCTIONS
 Process* create_process (int id) {
 
-    int process_size = generate_random_number (0, MAX_PROCESS_SIZE);
+    int process_size = generate_random_number (MIN_PROCESS_SIZE, MAX_PROCESS_SIZE);
     Process* process = malloc(sizeof(Process));
 
     if (process == NULL) {
@@ -49,7 +64,7 @@ Process* create_process (int id) {
     process->size = process_size;
     process->id = id;
 
-    int max_segment_size = process_size/NO_OF_SEGMENTS_PER_PROCESS;
+    int max_segment_size = process_size/NO_OF_SEGMENTS;
 
     Segment* code = create_segment(max_segment_size, 0, 0);
     Segment* stack = create_segment(max_segment_size, 1, 1);
@@ -64,7 +79,7 @@ Process* create_process (int id) {
 }
 
 Segment* create_segment(int max_segment_size, int growth_direction, int protection_bit) {
-    int segment_size = generate_random_number(0, max_segment_size);
+    int segment_size = generate_random_number(MIN_SEGMENT_SIZE, max_segment_size);
 
     Segment* segment = malloc(sizeof(Segment));
     if (segment == NULL) {
