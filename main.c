@@ -9,8 +9,6 @@
 
 // NB: assume all ints pertaining to sizes are in MB.
 
-// Upon creation, a process is assigned a logical address space. This address space is determined by the process' memory requirements. In this program, a process's logical address space will be contiguous. Virtual memory will be an array of segments. The starting logical address can be randomly generated. To keep the program simple, processes will have only 3 segments: stack, code, heap. Each process has 3 blocks in the array (since each process has 3 segments. These segments however will vary in size). The logical address is made up of the segment number and offset.
-
 // STRUCT DEFINTIONS
 typedef struct {
     int size;
@@ -25,6 +23,7 @@ typedef struct {
     int size;
     Segment* segments[NO_OF_SEGMENTS];
 } Process;
+
 
 
 // FUNCTION DECLARATIONS
