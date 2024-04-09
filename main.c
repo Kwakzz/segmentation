@@ -3,40 +3,45 @@
 #include <stdbool.h>
 #include <time.h> 
 #define NO_OF_SEGMENTS 3
-#define MAX_PROCESS_SIZE 12
-#define MIN_PROCESS_SIZE 3
-#define MIN_SEGMENT_SIZE 1
+// #define MAX_PROCESS_SIZE 12 //in MB
+// #define MIN_PROCESS_SIZE 3 //in MB
+#define MAX_SEGMENT_SIZE 16364 // bits, also 2KB
 
-// NB: assume all ints pertaining to sizes are in MB.
 
-typedef enum {
+typedef enum { // constants for segment types 
     CODE,
     STACK,
     HEAP
 } SegmentType;
 
-// STRUCT DEFINTIONS
-typedef struct {
-    // address range must be within its process' address range.
-    int limit; // determines the ending address. base + limit = ending address
-    int base; // starting physical address.
-    int growth_direction; // 1 indicates an upward direction, -1 indicates a downward direction, 0 for no growth
-    bool protection_bit; // 1 indicates read-write, 0 indicates read-only
-    SegmentType type;
-} Segment;
+// // STRUCT DEFINTIONS
+// // these are actually entries in the segment table of the process.
+// typedef struct {
+//     // address range must be within its process' address range. determines the ending address. base + limit = ending address
+//     int limit; // size of segment
+//     int base; // starting physical address.
+//     int growth_direction; // 1 indicates an upward direction, -1 indicates a downward direction, 0 for no growth
+//     bool protection_bit; // 1 indicates read-write, 0 indicates read-only
+//     SegmentType type;
+// } Segment;
 
+typedef struct {
+    int segment_number; // 0 for code, 1 for stack, 2 for heap
+    size_t size ; // size of segment
+    // void* base_address; // starting virtual address of the segment
+} Segment;
 
 typedef struct {
     int id;
-    int size;
-    Segment* segments[NO_OF_SEGMENTS];
+    int size; 
+    Segment* segments[NO_OF_SEGMENTS]; // code, stack, heap
 } Process;
 
 
 typedef struct {
-    int id;
+    int pid;
     int size; // determines the ending address. start address + size = ending address
-    int base; // starting address
+    // int base; // starting address
     int status; // 0 for ready, 1 for running, 2 for blocked
 } ProcessControlBlock; // contains metadata about process
 
@@ -46,113 +51,118 @@ ProcessControlBlock* process_table[20]; // contains process control blocks.
 
 // FUNCTION DECLARATIONS
 int generate_random_number(int min, int max);
-Segment* create_segment(int max_segment_size, SegmentType type);
+Segment* create_segment(SegmentType type);
 Process* create_process (int id);
-ProcessControlBlock create_PCB (Process process);
-void set_segment_type(SegmentType type, Segment *segment);
-
-
+void create_PCB (Process process);
+void set_segment_number(SegmentType type, Segment *segment);
 
 int main () {
 
-    srand(time(NULL)); // for random number generation. must run just once.
+    // srand(time(NULL)); // for random number generation. must run just once.
 
-    Process* process = create_process(1);
+    // Process* process = create_process(1);
 
-    printf("Process size: %d\n", process->size);
+    // printf("Process size: %d\n", process->size);
 
-    for (int i = 0; i<3; i++) {
-        printf("SEGMENT %d\n", i);
-        printf("Segment type: %d\n", process->segments[i]->type);
-        printf("Segment size: %d\n", process->segments[i]->limit);
-    }
+    // for (int i = 0; i<3; i++) {
+    //     printf("SEGMENT %d\n", i);
+    //     printf("Segment type: %d\n", process->segments[i]->type);
+    //     printf("Segment size: %d\n", process->segments[i]->limit);
+    // }
 
-    free(process);
+    // free(process);
 
-    return 0;
+    // return 0;
 
 }
 
-// MAIN FUNCTIONS
-Process* create_process (int id) {
 
-    int process_size = generate_random_number (MIN_PROCESS_SIZE, MAX_PROCESS_SIZE);
-    Process* process = malloc(sizeof(Process));
+//creating a single process with 3 segments
+Process* create_process (int id) { // takes process id as input
 
-    if (process == NULL) {
+    // create segments
+    Segment* code = create_segment(CODE);
+    Segment* stack = create_segment(STACK);
+    Segment* heap = create_segment(HEAP);
+
+    // get process size
+    int process_size = code->size + stack->size + heap->size;
+
+    // int process_size = generate_random_number (MIN_PROCESS_SIZE, MAX_PROCESS_SIZE); // generate random process size
+    Process* process = malloc(sizeof(Process)); // allocate memory for process
+
+    if (process == NULL) { // check if memory allocation was successful
         printf("Error creating process.\n");
         exit(1);
     }
 
-    process->size = process_size;
-    process->id = id;
+    // set process attributes
+    process->size = process_size; // set process size
+    process->id = id; // set process id
+    process->segments[0] = code; // set code segment
+    process->segments[1] = stack; // set stack segment
+    process->segments[2] = heap; // set heap segment
 
-    int max_segment_size = process_size/NO_OF_SEGMENTS;
-
-    process->segments[0] = create_segment(max_segment_size, CODE);
-    process->segments[1] = create_segment(max_segment_size, STACK);
-    process->segments[2] = create_segment(max_segment_size, HEAP);
-
-    create_PCB(*process);
+    create_PCB(*process); // create PCB for process
 
     return process;
-
 }
 
-ProcessControlBlock create_PCB (Process process) {
+// create a process control block to store metadata about the process
+void create_PCB (Process process) {
     
-    ProcessControlBlock* PCB = malloc(sizeof(ProcessControlBlock));
+    ProcessControlBlock* PCB = malloc(sizeof(ProcessControlBlock)); // allocate memory for PCB
 
     if (PCB == NULL) {
         printf("Error creating PCB\n");
         exit(1);
     }
 
-    PCB->size = process.size;
-    PCB->id = process.id;
+    PCB->size = process.size; // set PCB size
+    PCB->pid = process.id; // set PCB id
 
-    process_table[PCB->id] = PCB;
-
-    return *PCB;
-
+    process_table[PCB->pid] = PCB; // add PCB to process table
+    // return *PCB;
 }
 
-Segment* create_segment(int max_segment_size, SegmentType type) {
+// create segment for process
+Segment* create_segment(SegmentType type) {
 
-    int segment_limit = generate_random_number(MIN_SEGMENT_SIZE, max_segment_size);
-
-    Segment* segment = malloc(sizeof(Segment));
+    Segment* segment = malloc(sizeof(Segment)); // allocate memory for segment
     if (segment == NULL) {
         printf("Error creating segment.\n");
         exit(1);
     }
 
-    segment->limit = segment_limit;
+    int segment_size = generate_random_number(0, MAX_SEGMENT_SIZE); // generate random segment size
 
-    set_segment_type(type, segment);
+    segment->size = segment_size; // set segment size
+
+    set_segment_number(type, segment); // set segment type
 
     return segment;
 
 }
 
-void set_segment_type(SegmentType type, Segment *segment) {
+// set segment type
+void set_segment_number(SegmentType type, Segment *segment) {
 
     if (type == CODE) {
-        segment->type = CODE;
-        segment->growth_direction = 0;
-        segment->protection_bit = 0;
+        segment->segment_number = 0;
+        // segment->growth_direction = 0;
+        // segment->protection_bit = 0;
     }
 
     if (type == STACK) {
-        segment->type = STACK;
-        segment->growth_direction = 1;
-        segment->protection_bit = 1;
+        segment->segment_number = 1;
+        // segment->growth_direction = 1;
+        // segment->protection_bit = 1;
     }
 
     if (type == HEAP) {
-        segment->type = HEAP;
-        segment->growth_direction = -1;
-        segment->protection_bit = 1;
+        segment->segment_number = 2;
+        // segment->growth_direction = -1;
+        // segment->protection_bit = 1;
     }
 
 }
