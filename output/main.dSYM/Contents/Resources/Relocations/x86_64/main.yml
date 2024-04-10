@@ -1,0 +1,18 @@
+---
+triple:          'x86_64-apple-darwin'
+binary-path:     '/Users/kwakuosafo/Desktop/Kwaku/ashesi/fourth year/operating systems/segmentation/output/main'
+relocations:
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100000BD0, symSize: 0x10 }
+  - { offsetInCU: 0x4D, offset: 0x4D, size: 0x8, addend: 0x0, symName: _number_of_processes, symBinAddr: 0x100002000, symSize: 0x0 }
+  - { offsetInCU: 0x69, offset: 0x69, size: 0x8, addend: 0x0, symName: _process_table, symBinAddr: 0x100002010, symSize: 0x0 }
+  - { offsetInCU: 0xE0, offset: 0xE0, size: 0x8, addend: 0x0, symName: _physical_memory, symBinAddr: 0x100002008, symSize: 0x0 }
+  - { offsetInCU: 0x16D, offset: 0x16D, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x0, symBinAddr: 0x100000BD0, symSize: 0x10 }
+  - { offsetInCU: 0x186, offset: 0x186, size: 0x8, addend: 0x0, symName: _create_process, symObjAddr: 0x10, symBinAddr: 0x100000BE0, symSize: 0xF0 }
+  - { offsetInCU: 0x1F4, offset: 0x1F4, size: 0x8, addend: 0x0, symName: _create_segment, symObjAddr: 0x100, symBinAddr: 0x100000CD0, symSize: 0x70 }
+  - { offsetInCU: 0x238, offset: 0x238, size: 0x8, addend: 0x0, symName: _create_PCB, symObjAddr: 0x170, symBinAddr: 0x100000D40, symSize: 0x80 }
+  - { offsetInCU: 0x26A, offset: 0x26A, size: 0x8, addend: 0x0, symName: _fork_processes, symObjAddr: 0x1F0, symBinAddr: 0x100000DC0, symSize: 0x70 }
+  - { offsetInCU: 0x2B8, offset: 0x2B8, size: 0x8, addend: 0x0, symName: _generate_random_number, symObjAddr: 0x260, symBinAddr: 0x100000E30, symSize: 0x30 }
+  - { offsetInCU: 0x2FC, offset: 0x2FC, size: 0x8, addend: 0x0, symName: _set_segment_number, symObjAddr: 0x290, symBinAddr: 0x100000E60, symSize: 0x50 }
+  - { offsetInCU: 0x32E, offset: 0x32E, size: 0x8, addend: 0x0, symName: _allocate_segment_address, symObjAddr: 0x2E0, symBinAddr: 0x100000EB0, symSize: 0x10 }
+  - { offsetInCU: 0x352, offset: 0x352, size: 0x8, addend: 0x0, symName: _update_segment_table, symObjAddr: 0x2F0, symBinAddr: 0x100000EC0, symSize: 0x4F }
+...
