@@ -29,7 +29,7 @@ typedef enum { // constants for segment types
 typedef struct {
     int process_id; 
     int segment_number; // 0 for code, 1 for stack, 2 for heap
-    size_t size ; // size of segment
+    int size ; // size of segment
     // void* base_address; // starting virtual address of the segment
 } Segment;
 
@@ -97,7 +97,12 @@ Process* create_process (int id) { // takes process id as input
     process->segments[1] = stack; // set stack segment
     process->segments[2] = heap; // set heap segment
 
+
+
     create_PCB(*process); // create PCB for process
+
+    printf("Process %d created.\nSize is %d bits.\n", process_table[process->id]->pid, process_table[process->id]->size);
+    printf("Code is %d bits.\nStack is %d bits.\nHeap is %d bits\n\n", code->size, stack->size, heap->size);
 
     return process;
 }
@@ -126,7 +131,8 @@ void fork_processes () {
     scanf("%d", &number_of_processes);
 
     for (int pid = 0; pid<number_of_processes; pid++) {
-        Process* process = create_process(pid);
+
+        create_process(pid);
         
     }
 
@@ -183,11 +189,11 @@ int generate_random_number (int min, int max) {
 }
 
 
-void allocate_segment_address (Segment* segment) {
+// void allocate_segment_address (Segment* segment) {
 
 
 
-}
+// }
 
 void update_segment_table (Segment* segment, int base_address) {
 
