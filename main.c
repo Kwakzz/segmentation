@@ -6,7 +6,8 @@
 // #define MAX_PROCESS_SIZE 12 //in MB
 // #define MIN_PROCESS_SIZE 3 //in MB
 #define MAX_SEGMENT_SIZE 16364 // bits, also 2KB
-
+#define MAX_PROCESS
+#define PHYSICAL_MEMORY_SIZE
 
 typedef enum { // constants for segment types 
     CODE,
@@ -26,6 +27,7 @@ typedef enum { // constants for segment types
 // } Segment;
 
 typedef struct {
+    int process_id; 
     int segment_number; // 0 for code, 1 for stack, 2 for heap
     size_t size ; // size of segment
     // void* base_address; // starting virtual address of the segment
@@ -43,10 +45,12 @@ typedef struct {
     int size; // determines the ending address. start address + size = ending address
     // int base; // starting address
     int status; // 0 for ready, 1 for running, 2 for blocked
+    int* segment_table [NO_OF_SEGMENTS];
 } ProcessControlBlock; // contains metadata about process
 
-ProcessControlBlock* process_table[20]; // contains process control blocks. 
 
+int number_of_processes;
+ProcessControlBlock* process_table[100]; // contains process control blocks. 
 
 
 // FUNCTION DECLARATIONS
@@ -54,26 +58,16 @@ int generate_random_number(int min, int max);
 Segment* create_segment(SegmentType type);
 Process* create_process (int id);
 void create_PCB (Process process);
+void fork_processes ();
 void set_segment_number(SegmentType type, Segment *segment);
+void update_segment_table (Segment* segment, int base_address);
 
 int main () {
 
     // srand(time(NULL)); // for random number generation. must run just once.
+    fork_processes();
 
-    // Process* process = create_process(1);
-
-    // printf("Process size: %d\n", process->size);
-
-    // for (int i = 0; i<3; i++) {
-    //     printf("SEGMENT %d\n", i);
-    //     printf("Segment type: %d\n", process->segments[i]->type);
-    //     printf("Segment size: %d\n", process->segments[i]->limit);
-    // }
-
-    // free(process);
-
-    // return 0;
-
+   
 }
 
 
@@ -125,6 +119,20 @@ void create_PCB (Process process) {
     // return *PCB;
 }
 
+void fork_processes () {
+
+
+    printf("How many processes do you want create?\n");
+    scanf("%d", &number_of_processes);
+
+    for (int pid = 0; pid<number_of_processes; pid++) {
+        Process* process = create_process(pid);
+        
+    }
+
+
+}
+
 // create segment for process
 Segment* create_segment(SegmentType type) {
 
@@ -172,4 +180,19 @@ void set_segment_number(SegmentType type, Segment *segment) {
 int generate_random_number (int min, int max) {
      int random_number = rand() % max + min; 
      return random_number;
+}
+
+
+void allocate_segment_address (Segment* segment) {
+
+
+
+}
+
+void update_segment_table (Segment* segment, int base_address) {
+
+    ProcessControlBlock PCB = *process_table[segment->process_id]; // PCB of the process the segment belongs to
+    int* segment_table = *PCB.segment_table; // the segment table of the process the segment belongs to.
+    segment_table[segment->segment_number] = base_address; // map segment number to base address
+
 }
