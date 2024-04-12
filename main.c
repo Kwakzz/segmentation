@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h> 
+#include "createProcess.h"
 #define NO_OF_SEGMENTS 3
 // #define MAX_PROCESS_SIZE 12 //in MB
 // #define MIN_PROCESS_SIZE 3 //in MB
@@ -63,8 +64,6 @@ void set_segment_number(SegmentType type, Segment *segment);
 void update_segment_table (Segment* segment, int base_address);
 
 int main () {
-
-    // srand(time(NULL)); // for random number generation. must run just once.
     fork_processes();
 
    
@@ -195,10 +194,10 @@ int generate_random_number (int min, int max) {
 
 // }
 
+// updates segment table when segment is assigned physical memory 
 void update_segment_table (Segment* segment, int base_address) {
-
-    ProcessControlBlock PCB = *process_table[segment->process_id]; // PCB of the process the segment belongs to
-    int* segment_table = *PCB.segment_table; // the segment table of the process the segment belongs to.
-    segment_table[segment->segment_number] = base_address; // map segment number to base address
-
+    ProcessControlBlock PCB = *process_table[segment->process_id]; // get index of process' PCB in process table 
+    SegmentTableEntry* segment_table = *PCB.segment_table; // get process'segment table
+    SegmentTableEntry entry = {base_address, segment->size}; // create segment table entry
+    segment_table[segment->segment_number] = entry; // add entry to segment table 
 }
