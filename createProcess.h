@@ -1,6 +1,7 @@
 // Header guard to prevent multiple inclusions
 #ifndef CREATEPROCESS_H
 #define CREATEPROCESS_H
+
 #define MIN_SEGMENT_SIZE 2
 #define MAX_SEGMENT_SIZE 20 // bits
 #define NO_OF_SEGMENTS 3
