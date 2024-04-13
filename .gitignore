@@ -1,8 +1,13 @@
+# Ignore .vscode folder
 .vscode/
-.output/
-*
-!*/
-!*.c
-!*.h
-!*.sh
+
+# Ignore output folder
+output/
+
+# Ignore executables
+*.exe
+*.out
+# Add more patterns for other executable formats if needed
+
+# Ignore object files
 *.o
