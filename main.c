@@ -12,7 +12,6 @@ const char* segment_type_to_string(SegmentType type);
 int main () {
     
     fork_processes();
-    
 
 }
 

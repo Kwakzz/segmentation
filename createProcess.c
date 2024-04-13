@@ -66,10 +66,12 @@ void fork_processes () {
         printf("created pid is %d\n", process->id);
         printf("[%d, %d, %d]\n\n", process->segments[0]->size, process->segments[1]->size, process->segments[2]->size);
         
-        for (int segment_number = 0; segment_number < NO_OF_SEGMENTS; segment_number++) {
+        for (int segment_number = 0; segment_number < NO_OF_SEGMENTS; segment_number++) { // allocate physical memory to each segment of the process
             Segment* segment = process->segments[segment_number];
             int base_address = allocate_physical_memory_to_segment(segment);
 
+            // if allocation was successful, update the process's segment table with the segment's base address and limit.
+            // allocate_physical_memory_to_segment(segment) returns -1 if allocation is unsuccessful.
             if (base_address != -1) {
                 update_segment_table_entry(segment, base_address);
             }
@@ -128,12 +130,12 @@ int allocate_physical_memory_to_segment(Segment *segment) {
         int free_space_count = 0;
 
         while (i < PHYSICAL_MEMORY_SIZE && physical_memory[i] == NULL) {
-            free_space_count++;
+            free_space_count++; // increase free space if the current space is empty and doesn't go beyond the boundaries of physical memory
             i++;
         }
 
-        if (free_space_count >= segment->size) {
-            base_address = i - free_space_count;
+        if (free_space_count >= segment->size) { // if you've found enough space for the segment, fill up those spaces with the segment.
+            base_address = i - free_space_count; // base address = current_position minus the free_space_count which is essentially the size of the segment (in this case)
             for (int j = base_address; j < base_address + segment->size; j++) {
                 physical_memory[j] = segment;
             }
