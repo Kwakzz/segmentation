@@ -2,7 +2,8 @@
 .vscode/
 
 # Ignore output folder
-.output/main.dSYM/Contents
+output/main.dSYM/Contents
+output
 
 # Ignore executables
 seg
