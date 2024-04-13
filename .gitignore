@@ -2,12 +2,11 @@
 .vscode/
 
 # Ignore output folder
-output/
+output/main.dSYM/Contents
 
 # Ignore executables
-*.exe
-*.out
-# Add more patterns for other executable formats if needed
+seg
 
 # Ignore object files
-*.o
+createProcess.o
+.DS_Store
