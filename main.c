@@ -6,12 +6,16 @@
 // #define MAX_PROCESS_SIZE 12 //in MB
 // #define MIN_PROCESS_SIZE 3 //in MB
 
+
+// CONSTANTS
 #define MIN_SEGMENT_SIZE 2 // kb
 #define MAX_SEGMENT_SIZE 20 // kb
 #define NO_OF_SEGMENTS 3
 #define PHYSICAL_MEMORY_SIZE 1000 // kb 
 
 
+
+// STRUCT AND ENUM DEFINITIONS
 typedef enum { // constants for segment types 
     CODE,
     STACK,
@@ -48,11 +52,14 @@ typedef struct {
     SegmentTableEntry* segment_table [NO_OF_SEGMENTS];
 } ProcessControlBlock; // contains metadata about process
 
+
+
+
+
 // FUNCTION DECLARATIONS
-int generate_random_number(int min, int max);
 Segment* create_segment(SegmentType type, int process_id);
 Process* create_process(int process_id);
-void create_PCB(Process process);
+void create_PCB(Process *process);
 void fork_processes();
 void set_segment_number(SegmentType type, Segment *segment);
 int allocate_physical_memory_to_segment(Segment* segment);
@@ -60,59 +67,47 @@ void update_segment_table_entry (Segment* segment, int base_address);
 void print_segment_table(int pid);
 void deallocate_segment_physical_memory (int base, int limit);
 void deallocate_process_physical_memory (int pid);
+void compact_physical_memory();
+int generate_random_number(int min, int max);
+void print_physical_memory();
+const char* segment_type_to_string(SegmentType type);
 
+
+
+
+// VARIABLES AND ARRAYS
 int number_of_processes;
 ProcessControlBlock* process_table[1000]; // contains process control blocks. 
 Segment* physical_memory [PHYSICAL_MEMORY_SIZE];
+int deallocation_no = 4;
 
-void print_physical_memory();
-const char* segment_type_to_string(SegmentType type);
+
+
 
 int main () {
     
     fork_processes();
     
-    deallocate_process_physical_memory(0);
-    print_segment_table(0);
+    deallocate_process_physical_memory(2);
+    deallocate_process_physical_memory(4);
+    deallocate_process_physical_memory(7);
+    deallocate_process_physical_memory(9);
+
     print_physical_memory();
 
-}
+    compact_physical_memory();
+    printf("\n\nAFTER COMPACTION...\n");
+    print_physical_memory();
 
-void print_physical_memory() {
-    printf("Physical Memory:\n");
-    printf("+---------------------------------------------+\n");
-    printf("|     Address     |   PID   |  Segment |\n");
-    printf("+---------------------------------------------+\n");
+    print_segment_table(0);
+    print_segment_table(1);
+    print_segment_table(3);
 
-    for (int i = 0; i < 40; i++) {
-        
-        if (physical_memory[i] != NULL) {
-            printf("|      %3d        |   %3d   |       %d       |\n", i, physical_memory[i]->process_id, physical_memory[i]->segment_number);
-        } 
-        
-        else {
-            printf("|      %3d        |         |                 |\n", i);
-        }
-
-    }
-
-    printf("+---------------------------------------------+\n");
 }
 
 
-const char* segment_type_to_string(SegmentType type) {
-    switch (type) {
-        case CODE:
-            return "Code";
-        case STACK:
-            return "Stack";
-        case HEAP:
-            return "Heap";
-        default:
-            return "Unknown";
-    }
-}
 
+// FUNCTIONS
 //creating a single process with 3 segments
 Process* create_process (int process_id) { // takes process id as input
 
@@ -136,14 +131,14 @@ Process* create_process (int process_id) { // takes process id as input
     process->segments[1] = stack; // set stack segment
     process->segments[2] = heap; // set heap segment
 
-    create_PCB(*process); // create PCB for process
+    create_PCB(process); // create PCB for process
 
     return process;
 
 }
 
 // create a process control block to store metadata about the process
-void create_PCB (Process process) {
+void create_PCB (Process *process) {
     
     ProcessControlBlock* PCB = malloc(sizeof(ProcessControlBlock)); // allocate memory for PCB
 
@@ -152,11 +147,14 @@ void create_PCB (Process process) {
         exit(1);
     }
 
-    PCB->size = process.size; // set PCB size
-    PCB->pid = process.id; // set PCB id
+    PCB->size = process->size; // set PCB size
+    PCB->pid = process->id; // set PCB id
+
+    printf("Created PCB with id %d.\n", PCB->pid);
 
     process_table[PCB->pid] = PCB; // add PCB to process table
 
+    printf("PCB of process %d has been stored in process table.\n", process_table[PCB->pid]->pid);
     // CREATE SEGMENT TABLEHERE 
     // return *PCB;
 }
@@ -295,6 +293,99 @@ void update_segment_table_entry(Segment* segment, int base_address) {
 }
 
 
+// deallocate memory for each process
+void deallocate_process_physical_memory(int pid){
+    printf("\n\n deallocating process %d segments ----------------\n\n", pid);
+    ProcessControlBlock *pcb = process_table[pid];
+
+    for(int i=0; i<3; i++){
+        SegmentTableEntry *seg = pcb->segment_table[i];
+        deallocate_segment_physical_memory(seg->base, seg->limit);
+    }
+
+    process_table[pid] = NULL;
+
+}
+
+// deallocate memory for each segment 
+void deallocate_segment_physical_memory(int base, int limit){
+    // clear the space in physical memory
+    for(int i=base; i<base+limit; i++){
+        physical_memory[i] =  NULL;
+    } 
+}
+
+void compact_physical_memory () {
+
+    int length_of_temp = (number_of_processes - deallocation_no) * NO_OF_SEGMENTS;
+
+    Segment* temp [length_of_temp]; // temporary location for segments
+    int index_of_first_non_empty_space;
+    int current_temp_index;
+
+    // move first segment to temporary location
+    for (int i = 0; i < PHYSICAL_MEMORY_SIZE; i++) {
+
+        if (physical_memory[i] != NULL) {
+            temp[0] = physical_memory[i];
+            index_of_first_non_empty_space = i;
+            current_temp_index = index_of_first_non_empty_space;
+            break;
+        }
+
+    }
+
+    //move the rest of the segments to temporary location
+    for (int i = index_of_first_non_empty_space; i < PHYSICAL_MEMORY_SIZE; i++) {
+
+        Segment* current_segment = physical_memory[i];
+        Segment* current_temp_segment = temp[current_temp_index];
+
+        if (current_segment != NULL && (current_segment->segment_number != current_temp_segment->segment_number)) {
+            current_temp_index += 1;
+            temp[current_temp_index] = physical_memory[i];
+        }
+
+
+    }
+
+    // clear physical memory
+    for (int i = 0; i < PHYSICAL_MEMORY_SIZE; i++) {
+        if (physical_memory[i]!= NULL) {
+            physical_memory[i] = NULL;
+        }
+    }
+
+    for (int i = 0; i < length_of_temp; i++) { 
+        if (temp[i] != NULL) {
+            printf("At %d, pid %d, seg_no %d\n", i, temp[i]->process_id, temp[i]->segment_number);
+        }
+        
+    }
+
+
+    // rearrange segments in physical memory
+    for (int i = 0; i < length_of_temp; i++) { // allocate physical memory to each segment of the process
+
+        if (temp[i] != NULL) {
+
+            int base_address = allocate_physical_memory_to_segment(temp[i]);
+            // printf("At %d ,Base Address for pid %d seg_no %d: %d\n", i, segment->process_id, segment->segment_number, base_address);
+
+            if (base_address != -1) {
+                update_segment_table_entry(temp[i], base_address);
+            }
+
+        }
+
+    }
+
+
+}
+
+
+
+
 // HELPER FUNCTIONS
 int generate_random_number (int min, int max) {
      int random_number = rand() % max + min; 
@@ -324,28 +415,40 @@ void print_segment_table(int pid) {
         printf("Process Control Block not found\n");
     }
 
+    printf("+---------------------------------------------+\n\n");
+}
+
+void print_physical_memory() {
+    printf("Physical Memory:\n");
+    printf("+---------------------------------------------+\n");
+    printf("|     Address     |   PID   |      Segment    |\n");
+    printf("+---------------------------------------------+\n");
+
+    for (int i = 0; i < 600; i++) {
+        
+        if (physical_memory[i] != NULL) {
+            printf("|      %3d        |   %3d   |       %d       |\n", i, physical_memory[i]->process_id, physical_memory[i]->segment_number);
+        } 
+        
+        else {
+            printf("|      %3d        |         |                |\n", i);
+        }
+
+    }
+
     printf("+---------------------------------------------+\n");
 }
 
 
-// deallocate memory for  each process
-void deallocate_process_physical_memory(int pid){
-    printf("\n\n deallocating ----------------");
-    ProcessControlBlock *pcb = process_table[pid];
-
-    for(int i=0; i<3; i++){
-        SegmentTableEntry *seg = pcb->segment_table[i];
-        deallocate_segment_physical_memory(seg->base, seg->limit);
+const char* segment_type_to_string(SegmentType type) {
+    switch (type) {
+        case CODE:
+            return "Code";
+        case STACK:
+            return "Stack";
+        case HEAP:
+            return "Heap";
+        default:
+            return "Unknown";
     }
-
-    process_table[pid] = NULL;
-
-}
-
-// deallocate memory for each segment 
-void deallocate_segment_physical_memory(int base, int limit){
-    // clear the space in physical memory
-    for(int i=base; i<base+limit; i++){
-        physical_memory[i] =  NULL;
-    } 
 }
