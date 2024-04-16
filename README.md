@@ -8,6 +8,8 @@ This project simulates memory segmentation in a computer system. Memory segmenta
 
 In this simulation, we create processes consisting of three segments: code, stack, and heap. We manage physical memory allocation for these segments and implement functionalities like compacting memory, swapping using FIFO (First In, First Out) algorithm, and simulating memory access.
 
+Here's a [link](https://youtu.be/27bfPtfzAaw) to a demo of our project.
+
 ## Getting Started
 
 To run the simulation, simply compile the C program provided (`segmentation_simulation.c`) and execute the generated executable.
