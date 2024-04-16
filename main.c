@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h> 
-// #include "createProcess.h"
-// #define MAX_PROCESS_SIZE 12 //in MB
-// #define MIN_PROCESS_SIZE 3 //in MB
 
 
 // CONSTANTS
@@ -65,7 +62,7 @@ void set_segment_number(SegmentType type, Segment *segment);
 int allocate_physical_memory_to_segment(Segment* segment);
 void update_segment_table_entry (Segment* segment, int base_address);
 void print_segment_table(int pid);
-void deallocate_segment_physical_memory(int pid, int seg_num, int base, int limit, SegmentTableEntry* temp_seg);
+void deallocate_segment_physical_memory(int base, int limit, SegmentTableEntry* temp_seg);
 void deallocate_process_physical_memory (int pid);
 void compact_physical_memory();
 int generate_random_number(int min, int max);
@@ -87,9 +84,13 @@ int deallocation_no = 0;
 
 
 int main () {
+
+    int address = generate_logical_address();
+    printf("%d", address);
+    convert_to_segment_offset(address);
     
-    fork_processes();
-    print_physical_memory();
+    // fork_processes();
+    // print_physical_memory();
 
     // ProcessControlBlock *pcb = process_table[0];
     // SegmentTableEntry *seg = pcb->segment_table[0];
@@ -107,7 +108,7 @@ int main () {
     // printf("\n\nAFTER COMPACTION...\n");
     // print_physical_memory();
 
-    print_segment_table(0);
+    // print_segment_table(0);
     // print_segment_table(1);
     // print_segment_table(3);
 
@@ -327,7 +328,7 @@ void deallocate_process_physical_memory(int pid){
 }
 
 // deallocate memory for each segment 
-void deallocate_segment_physical_memory(int pid, int seg_num, int base, int limit, SegmentTableEntry* temp_seg){
+void deallocate_segment_physical_memory(int base, int limit, SegmentTableEntry* temp_seg){
     // clear the segment space in physical memory 
     for(int i=base; i<base+limit; i++){
         physical_memory[i] =  NULL;
@@ -431,6 +432,43 @@ int earliest_process(){
 
     return first_process;
 }
+
+int simulate_memory_access(){
+    int requesting_process = rand() % 10;
+    int seg_num = generate_random_number(0, NO_OF_SEGMENTS);
+    int offset = generate_random_number(MIN_SEGMENT_SIZE, MAX_SEGMENT_SIZE);
+    int count = 0;
+
+    while(process_table[requesting_process] == NULL && count < 10){
+        requesting_process = generate_random_number(0, 10);
+    }
+
+    if(process_table[requesting_process] == NULL){
+        printf("No process requesting access.\n");
+        return 1;
+    }
+
+    translate_logical_to_physical(seg_num, offset, requesting_process);
+
+    return 0;
+}
+
+
+int translate_logical_to_physical(int segment_number, int offset, int pid){
+    ProcessControlBlock *pcb = process_table[pid];
+    SegmentTableEntry *seg = pcb->segment_table[i];
+
+    if(offset > seg->limit){
+        fprintf(stderr, "An error occurred: Memory address out of bounds\n");
+        return 1;
+    } else{
+        int address_in_physical = offset + seg->base;
+        printf("Memory accessed at %d\n", address_in_physical);
+    }
+    
+    return 0;
+}
+
 
 // HELPER FUNCTIONS
 int generate_random_number (int min, int max) {
