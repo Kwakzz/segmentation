@@ -65,12 +65,14 @@ void set_segment_number(SegmentType type, Segment *segment);
 int allocate_physical_memory_to_segment(Segment* segment);
 void update_segment_table_entry (Segment* segment, int base_address);
 void print_segment_table(int pid);
-void deallocate_segment_physical_memory (int base, int limit);
+void deallocate_segment_physical_memory(int pid, int seg_num, int base, int limit, SegmentTableEntry* temp_seg);
 void deallocate_process_physical_memory (int pid);
 void compact_physical_memory();
 int generate_random_number(int min, int max);
 void print_physical_memory();
 const char* segment_type_to_string(SegmentType type);
+int earliest_process();
+void FIFO_swapping(int p1_size);
 
 
 
@@ -79,7 +81,7 @@ const char* segment_type_to_string(SegmentType type);
 int number_of_processes;
 ProcessControlBlock* process_table[1000]; // contains process control blocks. 
 Segment* physical_memory [PHYSICAL_MEMORY_SIZE];
-int deallocation_no = 4;
+int deallocation_no = 0;
 
 
 
@@ -87,25 +89,32 @@ int deallocation_no = 4;
 int main () {
     
     fork_processes();
+    print_physical_memory();
+
+    // ProcessControlBlock *pcb = process_table[0];
+    // SegmentTableEntry *seg = pcb->segment_table[0];
+
+    // deallocate_segment_physical_memory(1, 0, 0, 2, seg);
     
-    deallocate_process_physical_memory(2);
-    deallocate_process_physical_memory(4);
-    deallocate_process_physical_memory(7);
-    deallocate_process_physical_memory(9);
+    // deallocate_process_physical_memory(0);
+    // deallocate_process_physical_memory(4);
+    // deallocate_process_physical_memory(7);
+    // deallocate_process_physical_memory(9);
 
-    print_physical_memory();
+    // print_physical_memory();
 
-    compact_physical_memory();
-    printf("\n\nAFTER COMPACTION...\n");
-    print_physical_memory();
+    // compact_physical_memory();
+    // printf("\n\nAFTER COMPACTION...\n");
+    // print_physical_memory();
 
     print_segment_table(0);
-    print_segment_table(1);
-    print_segment_table(3);
+    // print_segment_table(1);
+    // print_segment_table(3);
 
 }
 
 
+// call compact physical memory if user doesnt find enough memory. we dont call it ourselves
 
 // FUNCTIONS
 //creating a single process with 3 segments
@@ -178,16 +187,22 @@ void fork_processes () {
 
             // if allocation was successful, update the process's segment table with the segment's base address and limit.
             // allocate_physical_memory_to_segment(segment) returns -1 if allocation is unsuccessful.
+            if (base_address == -1){
+                compact_physical_memory();
+                base_address = allocate_physical_memory_to_segment(segment);
+            }
+            if (base_address == -1){
+                FIFO_swapping(process->size);
+                base_address = allocate_physical_memory_to_segment(segment);
+            }
             if (base_address != -1) {
                 update_segment_table_entry(segment, base_address);
-            }
+            } 
+
         }
 
         print_segment_table(pid);
         printf("\n");
-
-
-
     }
 
 }
@@ -300,28 +315,37 @@ void deallocate_process_physical_memory(int pid){
 
     for(int i=0; i<3; i++){
         SegmentTableEntry *seg = pcb->segment_table[i];
-        deallocate_segment_physical_memory(seg->base, seg->limit);
+        if(seg->base != -1){
+            deallocate_segment_physical_memory(pid, i, seg->base, seg->limit, seg);
+        }   
     }
+
+    deallocation_no +=1;
 
     process_table[pid] = NULL;
 
 }
 
 // deallocate memory for each segment 
-void deallocate_segment_physical_memory(int base, int limit){
-    // clear the space in physical memory
+void deallocate_segment_physical_memory(int pid, int seg_num, int base, int limit, SegmentTableEntry* temp_seg){
+    // clear the segment space in physical memory 
     for(int i=base; i<base+limit; i++){
         physical_memory[i] =  NULL;
     } 
+
+    // set segment base to -1
+    temp_seg->base = -1;  
 }
 
+// compacts physical memory
 void compact_physical_memory () {
 
-    int length_of_temp = (number_of_processes - deallocation_no) * NO_OF_SEGMENTS;
+
+    int length_of_temp = (number_of_processes - deallocation_no) * NO_OF_SEGMENTS; // number of segments in the system
 
     Segment* temp [length_of_temp]; // temporary location for segments
-    int index_of_first_non_empty_space;
-    int current_temp_index;
+    int index_of_first_non_empty_space; 
+    int current_temp_index; // pointer to the last filled index in temp
 
     // move first segment to temporary location
     for (int i = 0; i < PHYSICAL_MEMORY_SIZE; i++) {
@@ -342,6 +366,7 @@ void compact_physical_memory () {
         Segment* current_temp_segment = temp[current_temp_index];
 
         if (current_segment != NULL && (current_segment->segment_number != current_temp_segment->segment_number)) {
+            // we need to check both the segment number and the pid
             current_temp_index += 1;
             temp[current_temp_index] = physical_memory[i];
         }
@@ -356,13 +381,13 @@ void compact_physical_memory () {
         }
     }
 
+    // print temporary compacted number representation
     for (int i = 0; i < length_of_temp; i++) { 
         if (temp[i] != NULL) {
             printf("At %d, pid %d, seg_no %d\n", i, temp[i]->process_id, temp[i]->segment_number);
         }
         
     }
-
 
     // rearrange segments in physical memory
     for (int i = 0; i < length_of_temp; i++) { // allocate physical memory to each segment of the process
@@ -375,16 +400,37 @@ void compact_physical_memory () {
             if (base_address != -1) {
                 update_segment_table_entry(temp[i], base_address);
             }
-
         }
-
     }
 
 
 }
 
+// remove from physical memory until memory available is >= process size. then i try to allocate process again
+void FIFO_swapping(int p1_size){
+    int first = earliest_process();
+    int first_size = process_table[first]->size;
+    int size_found = 0;
 
+    while (size_found < p1_size){
+        deallocate_process_physical_memory(first);
+        size_found += first_size;
+        first = earliest_process();
+    }
+}
 
+int earliest_process(){
+    int first_process;
+
+    for(int i = 0; i < 1000; i++){
+        if(process_table[i] != NULL){
+            first_process = i;
+            break;
+        }
+    }
+
+    return first_process;
+}
 
 // HELPER FUNCTIONS
 int generate_random_number (int min, int max) {
@@ -424,7 +470,7 @@ void print_physical_memory() {
     printf("|     Address     |   PID   |      Segment    |\n");
     printf("+---------------------------------------------+\n");
 
-    for (int i = 0; i < 600; i++) {
+    for (int i = 0; i < 60; i++) {
         
         if (physical_memory[i] != NULL) {
             printf("|      %3d        |   %3d   |       %d       |\n", i, physical_memory[i]->process_id, physical_memory[i]->segment_number);
