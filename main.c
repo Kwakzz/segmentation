@@ -361,12 +361,12 @@ void compact_physical_memory () {
     clear_physical_memory();
 
     // print temporary compacted number representation
-    for (int i = 0; i < length_of_temp; i++) { 
-        if (temp[i] != NULL) {
-            printf("At %d, pid %d, seg_no %d\n", i, temp[i]->process_id, temp[i]->segment_number);
-        }
+    // for (int i = 0; i < length_of_temp; i++) { 
+    //     if (temp[i] != NULL) {
+    //         printf("At %d, pid %d, seg_no %d\n", i, temp[i]->process_id, temp[i]->segment_number);
+    //     }
         
-    }
+    // }
 
     // rearrange segments in physical memory
     for (int i = 0; i < length_of_temp; i++) { // allocate physical memory to each segment of the process

@@ -1,4 +1,0 @@
-a process is created
-segments for the processes are created 
-when a process is created everything about the process is stored in the process control block 
-and saved to the process table  
