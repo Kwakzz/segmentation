@@ -15,7 +15,7 @@ To run the simulation, simply compile the C program provided (`segmentation_simu
 ```bash
 gcc main.c -o main
 ./main
-
+```
 
 ## Functionalities
 
